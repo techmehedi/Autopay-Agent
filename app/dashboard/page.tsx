@@ -15,6 +15,7 @@ import {
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { getUserAccountType, getCurrentOrganization } from '@/lib/auth';
+import { useSmoothNavigation } from '@/lib/navigation';
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   const [organization, setOrganization] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClientComponentClient();
+  const { navigate } = useSmoothNavigation();
 
   useEffect(() => {
     loadDashboardData();
@@ -185,12 +187,12 @@ export default function DashboardPage() {
         <AnimatedCard delay={0.4}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-white">Recent Claims</h2>
-            <Link
-              href="/dashboard/claims"
+            <button
+              onClick={() => navigate('/dashboard/claims')}
               className="text-sm text-purple-400 hover:text-purple-300 focus:outline-none focus:ring-0 transition-colors"
             >
               View all
-            </Link>
+            </button>
           </div>
           {recentClaims.length === 0 ? (
             <p className="text-slate-400 text-center py-8">No claims yet</p>
