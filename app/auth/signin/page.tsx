@@ -114,18 +114,18 @@ export default function SignInPage() {
       className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 px-4"
     >
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
             <Link href="/" className="hover:opacity-80 transition-opacity">
               <Logo size="lg" />
             </Link>
             <Link href="/" className="hover:opacity-80 transition-opacity">
-              <h1 className="text-4xl font-bold text-white">Reimburse.me</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold text-white">Reimburse.me</h1>
             </Link>
           </div>
-          <p className="text-slate-300">AI-powered employee reimbursement</p>
+          <p className="text-sm sm:text-base text-slate-300">AI-powered employee reimbursement</p>
         </div>
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 sm:p-8 border border-white/20 shadow-2xl">
           <Auth
             supabaseClient={supabase}
             appearance={{
