@@ -23,7 +23,7 @@ export async function evaluateRules(amount: number, recipient?: string): Promise
   const results: RuleResult[] = [];
 
   // Rule 1: Recipient is whitelisted (or not specified → default OK)
-  const recipientPassed = !recipient || (recipient && whitelisted.has(recipient));
+  const recipientPassed = !recipient || (!!recipient && whitelisted.has(recipient));
   results.push({
     id: 'recipient-whitelisted',
     label: 'Recipient Whitelisted',
