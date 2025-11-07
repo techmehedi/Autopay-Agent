@@ -82,65 +82,66 @@ export default function Home() {
             {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
-
-        {/* Mobile Menu Overlay */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="fixed inset-0 bg-black/50 z-40 sm:hidden"
-                onClick={() => setMobileMenuOpen(false)}
-              />
-              <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="fixed top-0 right-0 h-screen w-64 bg-slate-900/95 backdrop-blur-xl border-l border-white/20 z-50 flex flex-col sm:hidden"
-              >
-                <div className="flex items-center justify-between h-16 px-4 border-b border-white/10">
-                  <div className="flex items-center space-x-2">
-                    <Logo size="sm" />
-                    <span className="text-lg font-bold text-white">Menu</span>
-                  </div>
-                  <button
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="p-2 rounded-lg hover:bg-white/10 transition-colors text-white"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                <nav className="flex-1 px-4 py-6 space-y-2">
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      navigate('/auth/signin');
-                    }}
-                    className="w-full flex items-center justify-center px-4 py-3 rounded-lg text-base font-medium text-white/90 hover:text-white hover:bg-white/10 transition-all"
-                  >
-                    Sign In
-                  </button>
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      navigate('/auth/signin');
-                    }}
-                    className="w-full flex items-center justify-center px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-base font-medium shadow-lg shadow-blue-500/30"
-                  >
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Get Started
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </button>
-                </nav>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
       </nav>
+
+      {/* Mobile Menu Overlay - Outside nav for proper positioning */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/50 z-40 sm:hidden"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              className="fixed top-0 right-0 h-full w-[280px] max-w-[85vw] bg-slate-900/95 backdrop-blur-xl border-l border-white/20 z-50 flex flex-col sm:hidden"
+              style={{ height: '100dvh' }}
+            >
+              <div className="flex items-center justify-between h-16 px-4 border-b border-white/10">
+                <div className="flex items-center space-x-2">
+                  <Logo size="sm" />
+                  <span className="text-lg font-bold text-white">Menu</span>
+                </div>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 rounded-lg hover:bg-white/10 transition-colors text-white"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <nav className="flex-1 px-4 py-6 space-y-2">
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate('/auth/signin');
+                  }}
+                  className="w-full flex items-center justify-center px-4 py-3 rounded-lg text-base font-medium text-white/90 hover:text-white hover:bg-white/10 transition-all"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate('/auth/signin');
+                  }}
+                  className="w-full flex items-center justify-center px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-base font-medium shadow-lg shadow-blue-500/30"
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Get Started
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </button>
+              </nav>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Hero Section */}
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-16 sm:pb-32">
