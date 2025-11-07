@@ -1,132 +1,193 @@
-# AutoPay Agent
+# Reimburse.me - Full-Stack Reimbursement SaaS
 
-AutoPay Agent is a minimal, production-friendly AI agent that processes expense claims and, when compliant with policy, pays them out in USDC via Locus MCP (Machine Control Protocol).
+Reimburse.me is a modern, AI-powered employee reimbursement SaaS platform that businesses use to automate expense claims and pay employees instantly via Locus payments.
 
-The system parses free-form text like "reimburse $0.35 for coffee", applies strict policy rules (whitelist, per-tx limit, daily limit), executes a real MCP payout, and writes a detailed audit trail.
+## Features
 
-## How it works
+- **AI-Powered Processing**: Automatically process and approve expense claims using Claude AI
+- **Multi-Tenant Architecture**: Each business has its own organization with employees and policies
+- **Locus Integration**: Connect to Locus for instant USDC payments to employees
+- **Policy Management**: Customizable per-transaction, daily, and monthly limits
+- **Employee Management**: Add and manage team members with wallet addresses or emails
+- **Real-time Dashboard**: Track claims, payments, and analytics
+- **Modern UI**: Beautiful interface built with Aceternity UI patterns and Framer Motion
 
-- **UI (Next.js App Router)**: A simple form in `app/page.tsx` sends claims to an API route and renders results plus the audit log.
-- **API**: `pages/api/claim.ts` receives the claim, invokes the agent, and normalizes response types for the UI.
-- **Agent (LangChain + Claude)**: `lib/agent.ts` sets up an Anthropic Chat model with a ReAct agent. It embeds the policy rules in the prompt and connects to Locus MCP tools.
-  - It filters and binds MCP tools safely (schema checks) to avoid Zod/typeName issues.
-  - It detects whether a real tool execution happened and only trusts transaction IDs returned by tools.
-  - If the agent approves but didn’t actually call a tool, a manual fallback runs that directly calls the correct Locus payout tool.
-- **MCP client (Client Credentials OAuth)**: `@locus-technologies/langchain-mcp-m2m` handles secure MCP connections using Client Credentials (recommended by MCP).
-- **Policy**: Enforced in-agent (whitelisted contact; per-transaction and daily totals).
-- **Audit log**: `lib/auditStore.ts` stores every decision and payout attempt in `audit-log.json`.
+## Tech Stack
 
-### Policy rules (defaults)
-- Whitelisted recipient only (wallet or email)
-- Per-transaction max: `$0.50`
-- Daily max: `$3.00`
-
-You can override these via environment variables.
+- **Frontend**: Next.js 14 (App Router), React, TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes, Supabase
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **AI**: Anthropic Claude via LangChain
+- **Payments**: Locus MCP (Machine Control Protocol)
+- **UI Components**: Aceternity UI patterns, Framer Motion, Lucide Icons
 
 ## Setup
 
-1) Install dependencies
+### 1. Install Dependencies
+
 ```bash
 npm install
 ```
 
-2) Create `.env.local` in the project root
+### 2. Set Up Supabase
+
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Get your project URL and anon key from Settings > API
+3. Get your service role key from Settings > API (keep this secret!)
+
+### 3. Run Database Migrations
+
+Run the SQL migration file in your Supabase SQL Editor:
+
 ```bash
-LOCUS_CLIENT_ID=REPLACE_WITH_REAL
-LOCUS_CLIENT_SECRET=REPLACE_WITH_REAL
+# Copy the contents of supabase/migrations/001_initial_schema.sql
+# and run it in your Supabase SQL Editor
+```
+
+### 4. Configure Environment Variables
+
+Create `.env.local` in the project root:
+
+```bash
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# Anthropic AI
+ANTHROPIC_API_KEY=your_anthropic_api_key
+
+# Locus (optional - can be set per organization in settings)
+LOCUS_CLIENT_ID=your_locus_client_id
+LOCUS_CLIENT_SECRET=your_locus_client_secret
 LOCUS_MCP_URL=https://mcp.paywithlocus.com/mcp
-ANTHROPIC_API_KEY=REPLACE_WITH_REAL
 
-# Policy
-WHITELISTED_CONTACT=0xYourWalletOrEmail
-PER_TXN_MAX=0.50
-DAILY_MAX=3.0
-
-# Optional chain hints for some tools
+# Optional chain hints
 LOCUS_CHAIN=base
 LOCUS_NETWORK=mainnet
 ```
 
-3) Run the app
+### 5. Run the Application
+
 ```bash
 npm run dev
-# open http://localhost:3000
 ```
 
-## Using the app
-1. Enter a natural-language claim (e.g., "Reimburse $0.35 for coffee").
-2. Submit — the agent parses, validates against policy, and if approved, pays via Locus MCP.
-3. The result and every attempt is logged and visible in the audit list.
+Open [http://localhost:3000](http://localhost:3000) to see the landing page.
 
-## Key files
+## Getting Started
+
+1. **Sign Up**: Create an account at `/auth/signin`
+2. **Create Organization**: On first login, you'll be prompted to create an organization
+3. **Add Employees**: Go to Employees and add team members with their email and optional wallet address
+4. **Connect Locus**: In Settings, add your Locus Client ID and Secret
+5. **Configure Policies**: Set per-transaction, daily, and monthly limits
+6. **Submit Claims**: Employees can submit expense claims that are automatically processed by AI
+
+## Project Structure
+
 ```
-app/page.tsx                # UI form + results + audit log
-pages/api/claim.ts          # Claim processing API
-pages/api/audit.ts          # Audit retrieval API
-lib/agent.ts                # Core agent (Claude + MCP tools + manual fallback)
-lib/mcpClient.ts            # MCP client (client credentials)
-lib/auditStore.ts           # JSON-backed audit log
+app/
+  dashboard/          # Dashboard pages (protected)
+    employees/        # Employee management
+    claims/          # Claims management
+    settings/        # Organization settings
+  auth/              # Authentication pages
+  page.tsx           # Landing page
+
+components/
+  ui/                # Reusable UI components
+    navbar.tsx       # Navigation bar
+    animated-card.tsx # Animated card component
+
+lib/
+  supabase/          # Supabase client utilities
+  auth.ts            # Authentication helpers
+  agent.ts           # AI agent for processing claims
+  mcpClient.ts       # Locus MCP client
+
+pages/
+  api/
+    claim.ts         # Claim processing API (multi-tenant)
+
+supabase/
+  migrations/        # Database migrations
 ```
 
-## Logging & troubleshooting
-Run with logs saved and filter for MCP/tool lines:
-```bash
-npm run dev 2>&1 | tee server.log
-rg -n "MCP|payout|schema|params|SUCCESS|FAILED" server.log
-```
+## Database Schema
 
-Common issues:
-- Invalid Anthropic model → set `ANTHROPIC_MODEL` or rely on defaults the agent retries.
-- MCP schema mismatch → the fallback now inspects tool schema and tries multiple param shapes.
-- UI `.toFixed()` errors → the API and UI normalize `amount` to numbers.
+- **organizations**: Business organizations
+- **organization_members**: Multi-user organization support
+- **employees**: Team members who can submit claims
+- **claims**: Expense claims with status and processing results
+- **policies**: Organization-specific reimbursement policies
 
-## API quick reference
+## API Reference
 
 ### POST `/api/claim`
-Request
-```json
-{ "text": "Reimburse $0.35 for coffee" }
-```
-Response
+
+Process a new expense claim.
+
+**Request:**
 ```json
 {
-  "status": "approved" | "rejected",
-  "amount": 0.35,
-  "purpose": "coffee",
-  "txId": "...",      
-  "reason": "..."     
+  "claim_id": "uuid",
+  "organization_id": "uuid",
+  "employee_id": "uuid",
+  "amount": 50.00,
+  "purpose": "Team lunch",
+  "recipient": "employee@example.com"
 }
 ```
 
-### GET `/api/audit`
-Response
+**Response:**
 ```json
-[
-  {
-    "timestamp": "2025-11-02T14:18:04.000Z",
-    "status": "approved",
-    "amount": 0.35,
-    "purpose": "coffee",
-    "recipient": "0x...",
-    "txId": "tx-..."
-  }
-]
+{
+  "status": "approved",
+  "amount": 50.00,
+  "purpose": "Team lunch",
+  "txId": "tx_...",
+  "decision": "approve",
+  "confidence": 0.95,
+  "explanations": [...]
+}
 ```
 
-## Security notes
-- MCP uses Client Credentials OAuth (safer than API keys). Keep credentials in `.env.local`.
-- The agent only pays to the configured whitelisted contact and within limits.
-- The audit log captures all reasons/attempts; review it regularly.
+## Security
 
-## Tests (optional)
-If you pulled test files, run:
+- Row Level Security (RLS) enabled on all tables
+- Organization-based access control
+- Secure credential storage (Locus secrets encrypted at rest)
+- Authentication required for all dashboard routes
+
+## Development
+
 ```bash
+# Run development server
+npm run dev
+
+# Run tests
 npm test
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
 ```
 
----
+## Deployment
 
-### Credits
-- Locus Technologies MCP (client-credentials MCP adapter)
-- Anthropic Claude via LangChain
-- Next.js (App Router)
+1. Deploy to Vercel, Netlify, or your preferred platform
+2. Set environment variables in your deployment platform
+3. Ensure Supabase project is accessible
+4. Run migrations in production Supabase instance
+
+## License
+
+MIT
+
+## Support
+
+For issues and questions, please open an issue on GitHub.
