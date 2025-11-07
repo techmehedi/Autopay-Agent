@@ -7,6 +7,7 @@ import { AnimatedCard } from '@/components/ui/animated-card';
 import { ArrowLeft, Send, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { getUserAccountType, getCurrentOrganization } from '@/lib/auth';
+import { useSmoothNavigation } from '@/lib/navigation';
 
 export default function NewClaimPage() {
   const [accountType, setAccountType] = useState<'admin' | 'employee' | null>(null);
@@ -26,6 +27,7 @@ export default function NewClaimPage() {
   const [result, setResult] = useState<any>(null);
   const router = useRouter();
   const supabase = createClientComponentClient();
+  const { navigate } = useSmoothNavigation();
 
   useEffect(() => {
     loadEmployees();
@@ -471,12 +473,12 @@ export default function NewClaimPage() {
               </div>
             )}
             <div className="flex justify-end gap-3 mt-6">
-              <Link
-                href={accountType === 'employee' ? '/dashboard/employee' : '/dashboard/claims'}
+              <button
+                onClick={() => navigate(accountType === 'employee' ? '/dashboard/employee' : '/dashboard/claims')}
                 className="px-6 py-2 bg-white/5 border border-white/10 text-white rounded-lg hover:bg-white/10 transition-colors"
               >
                 View All Claims
-              </Link>
+              </button>
               <button
                 onClick={() => {
                   setResult(null);
