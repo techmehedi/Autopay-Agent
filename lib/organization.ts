@@ -1,10 +1,24 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
+interface Organization {
+  id: string;
+  name: string;
+  owner_id: string;
+  join_code?: string;
+  created_at?: string;
+  [key: string]: any;
+}
+
+interface OrganizationMember {
+  organization_id: string;
+  [key: string]: any;
+}
+
 /**
  * Get the current user's organization (where they are owner or member)
  * This avoids the complex OR query with subquery that PostgREST doesn't support
  */
-export async function getUserOrganization(supabase: ReturnType<typeof createClientComponentClient>) {
+export async function getUserOrganization(supabase: ReturnType<typeof createClientComponentClient>): Promise<Organization | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -28,11 +42,11 @@ export async function getUserOrganization(supabase: ReturnType<typeof createClie
       .limit(1)
       .single();
 
-    if (memberData) {
+    if (memberData && 'organization_id' in memberData) {
       const { data: orgData } = await supabase
         .from('organizations')
         .select('*')
-        .eq('id', memberData.organization_id)
+        .eq('id', (memberData as OrganizationMember).organization_id)
         .single();
       
       return orgData;
