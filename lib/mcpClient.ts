@@ -31,7 +31,8 @@ export async function sendPayout(
 ): Promise<{ success: boolean; txId?: string; error?: string }> {
   try {
     const client = await initClient();
-    const result = await client.callTool('locus', 'payouts.create', {
+    // Use type assertion since callTool may not be in the type definition
+    const result = await (client as any).callTool('locus', 'payouts.create', {
       recipient,
       amount,
       currency,
