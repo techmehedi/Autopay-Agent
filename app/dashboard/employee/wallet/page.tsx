@@ -7,6 +7,7 @@ import { AnimatedCard } from '@/components/ui/animated-card';
 import { ArrowLeft, Wallet, Save, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { getCurrentOrganization, getUserAccountType } from '@/lib/auth';
+import { useSmoothNavigation } from '@/lib/navigation';
 
 export default function WalletManagementPage() {
   const [wallets, setWallets] = useState<any[]>([]);
@@ -21,6 +22,7 @@ export default function WalletManagementPage() {
   const [employee, setEmployee] = useState<any>(null);
   const router = useRouter();
   const supabase = createClientComponentClient();
+  const { navigate } = useSmoothNavigation();
 
   useEffect(() => {
     loadWallets();
@@ -36,13 +38,13 @@ export default function WalletManagementPage() {
 
       const accountType = await getUserAccountType();
       if (accountType !== 'employee') {
-        router.push('/dashboard');
+        navigate('/dashboard');
         return;
       }
 
       const orgData = await getCurrentOrganization();
       if (!orgData) {
-        router.push('/dashboard/employee');
+        navigate('/dashboard/employee');
         return;
       }
 
