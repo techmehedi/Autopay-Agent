@@ -3,7 +3,7 @@ import * as path from 'path';
 
 export interface AuditEntry {
   timestamp: string;
-  status: 'approved' | 'rejected';
+  status: 'approved' | 'rejected' | 'review';
   amount: number;
   purpose: string;
   recipient?: string;
@@ -55,5 +55,26 @@ export const auditStore = {
       })
       .reduce((sum, entry) => sum + entry.amount, 0);
   },
+
+  toCSV(customEntries?: AuditEntry[]): string {
+    const entries = customEntries ?? readAuditLog();
+    const header = ['timestamp', 'status', 'amount', 'purpose', 'recipient', 'txId', 'reason', 'error'];
+    const rows = [header.join(',')];
+    for (const e of entries) {
+      const vals = [
+        e.timestamp,
+        e.status,
+        typeof e.amount === 'number' ? e.amount.toFixed(2) : String(e.amount ?? ''),
+        (e.purpose ?? '').toString().replaceAll('"', '""'),
+        (e.recipient ?? '').toString().replaceAll('"', '""'),
+        (e.txId ?? '').toString().replaceAll('"', '""'),
+        (e.reason ?? '').toString().replaceAll('"', '""'),
+        (e.error ?? '').toString().replaceAll('"', '""'),
+      ].map((v) => `"${v}` + `"`);
+      rows.push(vals.join(','));
+    }
+    return rows.join('\n');
+  },
 };
+
 
