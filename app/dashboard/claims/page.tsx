@@ -7,6 +7,7 @@ import { FileText, Plus, DollarSign, Clock, CheckCircle, XCircle, RefreshCw } fr
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { getCurrentOrganization, getUserAccountType } from '@/lib/auth';
+import { useSmoothNavigation } from '@/lib/navigation';
 
 export default function ClaimsPage() {
   const [claims, setClaims] = useState<any[]>([]);
@@ -14,6 +15,7 @@ export default function ClaimsPage() {
   const [accountType, setAccountType] = useState<'admin' | 'employee' | null>(null);
   const [expandedClaim, setExpandedClaim] = useState<string | null>(null);
   const supabase = createClientComponentClient();
+  const { navigate } = useSmoothNavigation();
 
   useEffect(() => {
     loadClaims();
@@ -98,13 +100,13 @@ export default function ClaimsPage() {
           >
             <RefreshCw className="h-4 w-4 sm:h-5 sm:w-5" />
           </button>
-          <Link
-            href="/dashboard/claims/new"
+          <button
+            onClick={() => navigate('/dashboard/claims/new')}
             className="inline-flex items-center px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base flex-1 sm:flex-initial justify-center"
           >
             <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
             <span className="sm:inline">New Claim</span>
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -116,13 +118,13 @@ export default function ClaimsPage() {
             <p className="text-slate-300 mb-6">
               Submit your first expense claim to get started.
             </p>
-            <Link
-              href="/dashboard/claims/new"
+            <button
+              onClick={() => navigate('/dashboard/claims/new')}
               className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
               <Plus className="h-5 w-5 mr-2" />
               Submit Claim
-            </Link>
+            </button>
           </div>
         </AnimatedCard>
       ) : (
