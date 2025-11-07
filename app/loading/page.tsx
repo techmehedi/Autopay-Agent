@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Logo from '@/components/ui/logo';
 
-export default function LoadingPage() {
+function LoadingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/auth/signin';
+  const redirectTo = searchParams?.get('redirect') || '/auth/signin';
 
   useEffect(() => {
     // Show loading for at least 800ms for smooth transition
@@ -69,6 +69,18 @@ export default function LoadingPage() {
         </motion.div>
       </motion.div>
     </div>
+  );
+}
+
+export default function LoadingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <Logo size="lg" />
+      </div>
+    }>
+      <LoadingContent />
+    </Suspense>
   );
 }
 
