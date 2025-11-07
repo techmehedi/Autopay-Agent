@@ -7,6 +7,7 @@ import { AnimatedCard } from '@/components/ui/animated-card';
 import { UserPlus, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { getUserOrganization } from '@/lib/organization';
+import { useSmoothNavigation } from '@/lib/navigation';
 
 export default function NewEmployeePage() {
   const [formData, setFormData] = useState({
@@ -18,6 +19,7 @@ export default function NewEmployeePage() {
   const [error, setError] = useState('');
   const router = useRouter();
   const supabase = createClientComponentClient();
+  const { navigate } = useSmoothNavigation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +58,7 @@ export default function NewEmployeePage() {
         return;
       }
 
-      router.push('/dashboard/employees');
+      navigate('/dashboard/employees');
     } catch (err: any) {
       setError(err.message || 'Failed to create employee');
     } finally {
