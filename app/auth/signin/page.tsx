@@ -7,6 +7,7 @@ import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 import Link from 'next/link';
 import { getUserAccountType } from '@/lib/auth';
+import { useSmoothNavigation } from '@/lib/navigation';
 import Logo from '@/components/ui/logo';
 import { motion } from 'framer-motion';
 
@@ -14,6 +15,7 @@ export default function SignInPage() {
   const supabase = createClientComponentClient();
   const router = useRouter();
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const { navigate } = useSmoothNavigation();
 
   useEffect(() => {
     // Check auth state and redirect if already authenticated
@@ -116,12 +118,18 @@ export default function SignInPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-            <Link href="/" className="hover:opacity-80 transition-opacity">
+            <button
+              onClick={() => navigate('/')}
+              className="hover:opacity-80 transition-opacity"
+            >
               <Logo size="lg" />
-            </Link>
-            <Link href="/" className="hover:opacity-80 transition-opacity">
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="hover:opacity-80 transition-opacity"
+            >
               <h1 className="text-3xl sm:text-4xl font-bold text-white">Reimburse.me</h1>
-            </Link>
+            </button>
           </div>
           <p className="text-sm sm:text-base text-slate-300">AI-powered employee reimbursement</p>
         </div>
@@ -188,7 +196,7 @@ export default function SignInPage() {
                 },
               },
             }}
-            providers={['google', 'github']}
+            providers={[]}
             redirectTo={`${window.location.origin}/auth/callback`}
             theme="dark"
           />
