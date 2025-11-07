@@ -18,6 +18,7 @@ import {
   X
 } from 'lucide-react';
 import { getUserAccountType } from '@/lib/auth';
+import { useSmoothNavigation } from '@/lib/navigation';
 import Logo from './logo';
 
 interface NavbarProps {
@@ -34,6 +35,7 @@ export default function Navbar({ onToggle }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClientComponentClient();
+  const { navigate } = useSmoothNavigation();
 
   useEffect(() => {
     // Check if mobile on mount and resize
@@ -115,10 +117,13 @@ export default function Navbar({ onToggle }: NavbarProps) {
       <>
         {/* Mobile Header */}
         <div className="fixed top-0 left-0 right-0 h-16 bg-white/5 backdrop-blur-sm border-b border-white/10 z-50 flex items-center justify-between px-4 lg:hidden">
-          <Link href={effectiveAccountType === 'employee' ? '/dashboard/employee' : '/dashboard'} className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+          <button
+            onClick={() => navigate(effectiveAccountType === 'employee' ? '/dashboard/employee' : '/dashboard')}
+            className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+          >
             <Logo size="sm" />
             <span className="text-lg font-bold text-white">Reimburse.me</span>
-          </Link>
+          </button>
           <button
             onClick={handleToggle}
             className="p-2 rounded-lg hover:bg-white/10 transition-colors text-white"
@@ -166,21 +171,23 @@ export default function Navbar({ onToggle }: NavbarProps) {
                     const Icon = item.icon;
                     const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
                     return (
-                      <Link
+                      <button
                         key={item.name}
-                        href={item.href}
-                        className={`flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          navigate(item.href);
+                        }}
+                        className={`w-full flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                           isActive
                             ? 'bg-purple-600 text-white'
                             : 'text-slate-300 hover:bg-white/10 hover:text-white'
                         }`}
-                        onClick={() => setMobileMenuOpen(false)}
                       >
                         <Icon className={`h-5 w-5 mr-3 flex-shrink-0 ${
                           isActive ? 'text-white' : 'text-slate-300'
                         }`} />
                         <span>{item.name}</span>
-                      </Link>
+                      </button>
                     );
                   })}
                 </nav>
@@ -231,10 +238,13 @@ export default function Navbar({ onToggle }: NavbarProps) {
                 exit={{ opacity: 0, width: 0 }}
                 className="flex items-center space-x-2 overflow-hidden"
               >
-                <Link href={effectiveAccountType === 'employee' ? '/dashboard/employee' : '/dashboard'} className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+                <button
+                  onClick={() => navigate(effectiveAccountType === 'employee' ? '/dashboard/employee' : '/dashboard')}
+                  className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+                >
                   <Logo size="sm" />
                   <span className="text-lg font-bold text-white whitespace-nowrap">Reimburse.me</span>
-                </Link>
+                </button>
               </motion.div>
             ) : (
               <motion.div
@@ -244,9 +254,12 @@ export default function Navbar({ onToggle }: NavbarProps) {
                 exit={{ opacity: 0 }}
                 className="flex justify-center w-full"
               >
-                <Link href={effectiveAccountType === 'employee' ? '/dashboard/employee' : '/dashboard'} className="hover:opacity-80 transition-opacity">
+                <button
+                  onClick={() => navigate(effectiveAccountType === 'employee' ? '/dashboard/employee' : '/dashboard')}
+                  className="hover:opacity-80 transition-opacity"
+                >
                   <Logo size="sm" />
-                </Link>
+                </button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -269,10 +282,10 @@ export default function Navbar({ onToggle }: NavbarProps) {
             const Icon = item.icon;
             const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
             return (
-              <Link
+              <button
                 key={item.name}
-                href={item.href}
-                className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative focus:outline-none focus:ring-0 active:outline-none ${
+                onClick={() => navigate(item.href)}
+                className={`w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative focus:outline-none focus:ring-0 active:outline-none ${
                   isActive
                     ? 'bg-purple-600 text-white'
                     : 'text-slate-300 hover:bg-white/10 hover:text-white'
@@ -291,16 +304,16 @@ export default function Navbar({ onToggle }: NavbarProps) {
                       transition={{ duration: 0.2 }}
                       className="whitespace-nowrap overflow-hidden"
                     >
+                        {item.name}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                  {!sidebarOpen && (
+                    <div className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-lg">
                       {item.name}
-                    </motion.span>
+                    </div>
                   )}
-                </AnimatePresence>
-                {!sidebarOpen && (
-                  <div className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-lg">
-                    {item.name}
-                  </div>
-                )}
-              </Link>
+                </button>
             );
           })}
         </nav>
