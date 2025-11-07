@@ -100,7 +100,7 @@ export default function Home() {
                 animate={{ x: 0 }}
                 exit={{ x: '100%' }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="fixed top-0 right-0 h-screen w-64 bg-white/5 backdrop-blur-lg border-l border-white/10 z-50 flex flex-col sm:hidden"
+                className="fixed top-0 right-0 h-screen w-64 bg-slate-900/95 backdrop-blur-xl border-l border-white/20 z-50 flex flex-col sm:hidden"
               >
                 <div className="flex items-center justify-between h-16 px-4 border-b border-white/10">
                   <div className="flex items-center space-x-2">
