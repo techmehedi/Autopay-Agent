@@ -41,7 +41,7 @@ export default function SignInPage() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' || event === 'SIGNED_UP') {
+      if (event === 'SIGNED_IN' || (event as string) === 'SIGNED_UP') {
         if (session) {
           // Wait a bit for the session to be fully established
           setTimeout(async () => {
@@ -184,7 +184,6 @@ export default function SignInPage() {
                     borderRadiusButton: '8px',
                     buttonBorderRadius: '8px',
                     inputBorderRadius: '8px',
-                    labelBorderRadius: '8px',
                   },
                 },
               },
