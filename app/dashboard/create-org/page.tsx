@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { AnimatedCard } from '@/components/ui/animated-card';
 import { Building2, Save, Copy, Check } from 'lucide-react';
+import { useSmoothNavigation } from '@/lib/navigation';
 
 export default function CreateOrganizationPage() {
   const [formData, setFormData] = useState({
@@ -17,6 +18,7 @@ export default function CreateOrganizationPage() {
   const [copied, setCopied] = useState(false);
   const router = useRouter();
   const supabase = createClientComponentClient();
+  const { navigate } = useSmoothNavigation();
 
   const generateSlug = (name: string) => {
     return name
@@ -154,7 +156,7 @@ export default function CreateOrganizationPage() {
 
             <div className="flex gap-3 justify-center">
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => navigate('/dashboard')}
                 className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               >
                 Go to Dashboard
