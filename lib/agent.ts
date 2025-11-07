@@ -2,34 +2,82 @@ import { MCPClientCredentials } from '@locus-technologies/langchain-mcp-m2m';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import { auditStore, AuditEntry } from './auditStore';
+import { evaluateRules } from './rules';
+import { pickDefaultRecipient } from './policy';
+import { CustomPolicy } from './customPolicies';
 
-let agent: any = null;
-let mcpClient: MCPClientCredentials | null = null;
+// Cache agents per organization (keyed by config)
+const agentCache = new Map<string, any>();
+const mcpClientCache = new Map<string, MCPClientCredentials>();
 
-async function getAgent() {
-  if (agent) {
-    return agent;
+export interface AgentConfig {
+  locusClientId?: string;
+  locusClientSecret?: string;
+  locusMcpUrl?: string;
+  whitelistedContact?: string;
+  perTxnMax?: number;
+  dailyMax?: number;
+  customPolicies?: CustomPolicy[];
+}
+
+function getConfigKey(config?: AgentConfig): string {
+  if (!config || !config.locusClientId) {
+    return 'default';
+  }
+  // Create a unique key based on credentials
+  return `${config.locusClientId}:${config.locusMcpUrl || 'default'}`;
+}
+
+async function getAgent(config?: AgentConfig) {
+  const configKey = getConfigKey(config);
+  
+  // Return cached agent if available (for default config only, organization-specific ones are created fresh)
+  if (configKey === 'default' && agentCache.has(configKey)) {
+    return agentCache.get(configKey);
+  }
+  
+  // For organization-specific configs, check cache but will create new if needed
+  if (configKey !== 'default' && agentCache.has(configKey)) {
+    return agentCache.get(configKey);
   }
 
-  // 1. Create MCP client with Client Credentials
-  mcpClient = new MCPClientCredentials({
+  // Use config if provided, otherwise fall back to environment variables
+  const locusUrl = config?.locusMcpUrl || process.env.LOCUS_MCP_URL || 'https://mcp.paywithlocus.com/mcp';
+  const locusClientId = config?.locusClientId || process.env.LOCUS_CLIENT_ID;
+  const locusClientSecret = config?.locusClientSecret || process.env.LOCUS_CLIENT_SECRET;
+
+  // If no credentials provided, create agent without tools
+  if (!locusClientId || !locusClientSecret) {
+    console.warn('No Locus credentials provided - agent will work without payment tools');
+    const modelName = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
+    const llm = new ChatAnthropic({ model: modelName });
+    const agentWithoutTools = createReactAgent({ llm, tools: [] } as any);
+    // Cache agent without tools
+    agentCache.set(configKey, agentWithoutTools);
+    return agentWithoutTools;
+  }
+
+  // Create new MCP client with provided credentials
+  const client = new MCPClientCredentials({
     mcpServers: {
       locus: {
-        url: process.env.LOCUS_MCP_URL!,
+        url: locusUrl,
         auth: {
-          clientId: process.env.LOCUS_CLIENT_ID!,
-          clientSecret: process.env.LOCUS_CLIENT_SECRET!,
+          clientId: locusClientId,
+          clientSecret: locusClientSecret,
         },
       },
     },
   });
 
+  // Store client for manual payout fallback
+  mcpClientCache.set(configKey, client);
+
   // 2. Connect and load tools
-  await mcpClient.initializeConnections();
-  const rawTools = await mcpClient.getTools();
+  await client.initializeConnections();
+  const rawTools = await client.getTools();
 
   // 3. Use with LangChain
-  // (Make sure to set ANTHROPIC_API_KEY environment variable)
   const modelName = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514';
   const llm = new ChatAnthropic({ model: modelName });
   
@@ -82,14 +130,15 @@ async function getAgent() {
 
   // Create agent following the exact pattern from the example
   // Wrap in try-catch to handle schema errors gracefully
+  let createdAgent: any;
   try {
     // If we have valid tools, use them; otherwise create agent without tools
     if (validTools.length > 0) {
-      agent = createReactAgent({ llm, tools: validTools } as any);
+      createdAgent = createReactAgent({ llm, tools: validTools } as any);
       console.log('Agent created successfully with tools');
     } else {
       console.warn('No valid tools available, creating agent without tools');
-      agent = createReactAgent({ 
+      createdAgent = createReactAgent({ 
         llm, 
         tools: [] 
       } as any);
@@ -104,7 +153,7 @@ async function getAgent() {
       
       try {
         // Try creating agent without tools as fallback
-        agent = createReactAgent({ 
+        createdAgent = createReactAgent({ 
           llm, 
           tools: [] 
         } as any);
@@ -119,7 +168,10 @@ async function getAgent() {
     }
   }
 
-  return agent;
+  // Cache agent for reuse (both default and org-specific)
+  agentCache.set(configKey, createdAgent);
+
+  return createdAgent;
 }
 
 export interface AgentResponse {
@@ -130,9 +182,19 @@ export interface AgentResponse {
   reason?: string;
   txId?: string;
   error?: string;
+  // Extended fields for MVP explainability
+  decision?: 'approve' | 'deny' | 'review';
+  confidence?: number;
+  explanations?: Array<{
+    id: string;
+    label?: string;
+    reason: string;
+    weight?: number;
+  }>;
+  traceId?: string;
 }
 
-export async function processClaim(userInput: string): Promise<AgentResponse> {
+export async function processClaim(userInput: string, config?: AgentConfig): Promise<AgentResponse> {
   // Extract amount from input as fallback (even if agent fails)
   const amountMatch = userInput.match(/\$?([\d.]+)/);
   const extractedAmount = amountMatch ? parseFloat(amountMatch[1]) : 0;
@@ -142,7 +204,7 @@ export async function processClaim(userInput: string): Promise<AgentResponse> {
     
     // Try to get agent, but if model fails during invocation, we'll handle it
     try {
-      agentInstance = await getAgent();
+      agentInstance = await getAgent(config);
     } catch (error: any) {
       // Return with extracted amount instead of 0
       return {
@@ -154,12 +216,54 @@ export async function processClaim(userInput: string): Promise<AgentResponse> {
       };
     }
     
-    // Build prompt with policy rules
-    const whitelistedContact = process.env.WHITELISTED_CONTACT!;
-    const perTxnMax = parseFloat(process.env.PER_TXN_MAX || '0.50');
-    const dailyMax = parseFloat(process.env.DAILY_MAX || '3.0');
+    // Build prompt with policy rules - use config if provided, otherwise env vars
+    const whitelistedContact = config?.whitelistedContact || process.env.WHITELISTED_CONTACT || '';
+    const perTxnMax = config?.perTxnMax || parseFloat(process.env.PER_TXN_MAX || '0.50');
+    const dailyMax = config?.dailyMax || parseFloat(process.env.DAILY_MAX || '3.0');
     const today = new Date().toISOString().split('T')[0];
     const todayTotal = auditStore.getDailyTotal(today);
+
+    // Build custom policies section for prompt
+    let customPoliciesSection = '';
+    if (config?.customPolicies && config.customPolicies.length > 0) {
+      const customPoliciesList = config.customPolicies.map((p, idx) => {
+        const config = p.rule_config as any;
+        let ruleText = '';
+        
+        switch (p.rule_type) {
+          case 'amount_limit':
+            if (config.maxAmount) ruleText += `Maximum amount: $${config.maxAmount.toFixed(2)}. `;
+            if (config.minAmount) ruleText += `Minimum amount: $${config.minAmount.toFixed(2)}. `;
+            break;
+          case 'purpose_restriction':
+            if (config.allowedKeywords?.length) ruleText += `Purpose must contain one of: ${config.allowedKeywords.join(', ')}. `;
+            if (config.blockedKeywords?.length) ruleText += `Purpose must NOT contain: ${config.blockedKeywords.join(', ')}. `;
+            break;
+          case 'time_restriction':
+            if (config.allowedDays?.length) ruleText += `Claims only allowed on: ${config.allowedDays.join(', ')}. `;
+            if (config.allowedHours) ruleText += `Claims only allowed between ${config.allowedHours.start} and ${config.allowedHours.end}. `;
+            break;
+          case 'employee_restriction':
+            if (config.allowedEmployeeIds?.length) ruleText += `Only specific employees allowed. `;
+            if (config.blockedEmployeeIds?.length) ruleText += `Specific employees blocked. `;
+            break;
+          case 'category_restriction':
+            if (config.allowedCategories?.length) ruleText += `Only categories allowed: ${config.allowedCategories.join(', ')}. `;
+            if (config.blockedCategories?.length) ruleText += `Categories blocked: ${config.blockedCategories.join(', ')}. `;
+            break;
+          case 'custom_condition':
+            ruleText += `Custom condition: ${config.condition || ''}. `;
+            break;
+        }
+        
+        return `${idx + 5}. ${p.name}${p.description ? ` (${p.description})` : ''}: ${ruleText}`;
+      }).join('\n');
+      
+      customPoliciesSection = `\n\nCUSTOM POLICIES (STRICTLY ENFORCE):
+${customPoliciesList}
+
+These custom policies are in addition to the standard policies above. ALL policies must pass for approval.`;
+    }
 
     const prompt = `You are AutoPay Agent, an AI assistant that processes expense claims and makes payments using Locus MCP tools.
 
@@ -167,7 +271,7 @@ POLICY RULES (STRICTLY ENFORCE):
 1. DEFAULT RECIPIENT: If no recipient is mentioned in the claim, automatically use the whitelisted contact: ${whitelistedContact}
 2. RECIPIENT CHECK: Only pay to whitelisted contact ${whitelistedContact}. If a different recipient is mentioned, reject. If no recipient is mentioned, use ${whitelistedContact} (PASSES check).
 3. Maximum per transaction: $${perTxnMax.toFixed(2)}
-4. Maximum daily total: $${dailyMax.toFixed(2)} (Current today: $${todayTotal.toFixed(2)}, Remaining: $${(dailyMax - todayTotal).toFixed(2)})
+4. Maximum daily total: $${dailyMax.toFixed(2)} (Current today: $${todayTotal.toFixed(2)}, Remaining: $${(dailyMax - todayTotal).toFixed(2)})${customPoliciesSection}
 
 WORKFLOW:
 1. Parse the expense claim to extract amount and purpose
@@ -362,10 +466,16 @@ Always provide a structured response with status (approved/rejected), amount, pu
 
     // If approved, ALWAYS try to execute payment (even if agent said it did)
     // Only skip if we have a REAL transaction ID from tool execution
+    // Determine final recipient early for payout attempts
+    const recipientFinal = parsed.recipient || pickDefaultRecipient() || whitelistedContact;
     if (parsed.status === 'approved' && !realTxIdFromTool) {
       console.log('Agent approved but did not execute payment. Manually calling MCP payout...');
       
       try {
+        // Get the MCP client for this config
+        const configKey = config ? getConfigKey(config) : 'default';
+        const mcpClient = mcpClientCache.get(configKey);
+        
         // Use the MCP client directly to call the payout tool
         if (mcpClient) {
           let toolResult: any = null;
@@ -374,8 +484,8 @@ Always provide a structured response with status (approved/rejected), amount, pu
           const tools = await mcpClient.getTools();
           console.log('Available tools:', tools.map((t: any) => t.name));
           
-          // Determine recipient type from WHITELISTED_CONTACT
-          const wc = process.env.WHITELISTED_CONTACT || '';
+          // Determine recipient type from selected recipient
+          const wc = recipientFinal || '';
           const isEmail = /@/.test(wc);
           const isAddress = /^0x[a-fA-F0-9]{40}$/.test(wc);
           const recipientType = isEmail ? 'email' : (isAddress ? 'address' : 'contact');
@@ -503,7 +613,7 @@ Always provide a structured response with status (approved/rejected), amount, pu
               if (recipientField && amountField) {
                 // Try exact schema match first (highest priority)
                 attempts.unshift({
-                  params: { [recipientField]: whitelistedContact, [amountField]: parsed.amount },
+                  params: { [recipientField]: wc, [amountField]: parsed.amount },
                   description: `exact schema: ${recipientField} + ${amountField}`
                 });
                 
@@ -561,11 +671,11 @@ Always provide a structured response with status (approved/rejected), amount, pu
               console.warn('No parameters extracted from schema, trying basic combinations');
               const toolNameLower = selectedTool.name.toLowerCase();
               if (toolNameLower.includes('contact')) {
-                attempts.push({ params: { contact: whitelistedContact, amount: parsed.amount }, description: 'basic: contact + amount' });
+                attempts.push({ params: { contact: wc, amount: parsed.amount }, description: 'basic: contact + amount' });
               } else if (toolNameLower.includes('address')) {
-                attempts.push({ params: { address: whitelistedContact, amount: parsed.amount }, description: 'basic: address + amount' });
+                attempts.push({ params: { address: wc, amount: parsed.amount }, description: 'basic: address + amount' });
               } else if (toolNameLower.includes('email')) {
-                attempts.push({ params: { email: whitelistedContact, amount: parsed.amount }, description: 'basic: email + amount' });
+                attempts.push({ params: { email: wc, amount: parsed.amount }, description: 'basic: email + amount' });
               }
             }
             
@@ -716,6 +826,33 @@ Always provide a structured response with status (approved/rejected), amount, pu
     }
     if (!parsed.purpose) {
       parsed.purpose = userInput;
+    }
+
+    // Compute decision, confidence, explanations, and traceId based on deterministic rules
+    try {
+      const recipientFinal = parsed.recipient || pickDefaultRecipient() || process.env.WHITELISTED_CONTACT!;
+      const evaln = await evaluateRules(Number(parsed.amount) || 0, recipientFinal);
+      const total = evaln.results.length || 1;
+      const passed = evaln.results.filter((r: any) => r.passed).length;
+      const confidence = Math.max(0, Math.min(1, passed / total));
+      parsed.decision = evaln.approved ? 'approve' : 'deny';
+      parsed.confidence = confidence;
+      parsed.explanations = evaln.results.map((r: any) => ({
+        id: r.id,
+        label: r.label,
+        reason: r.reason || (r.passed ? 'Rule passed' : 'Rule failed'),
+        weight: typeof r.weight === 'number' ? r.weight : undefined,
+      }));
+      parsed.recipient = recipientFinal;
+      // Append deterministic reason if none present
+      if (!parsed.reason && evaln.reason) {
+        parsed.reason = evaln.reason;
+      }
+      // Generate a simple trace id
+      const rand = Math.random().toString(36).slice(2, 10);
+      parsed.traceId = `tr_${Date.now().toString(36)}_${rand}`;
+    } catch (e) {
+      // Non-fatal: continue without extended fields
     }
 
     // Log to audit store
