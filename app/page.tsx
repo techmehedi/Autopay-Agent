@@ -46,22 +46,22 @@ export default function Home() {
           className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900"
         >
       {/* Navigation */}
-      <nav className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <nav className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
             <Logo size="md" />
-            <span className="text-2xl font-bold text-white">Reimburse.me</span>
+            <span className="text-xl sm:text-2xl font-bold text-white">Reimburse.me</span>
           </Link>
-          <div className="flex items-center space-x-8">
+          <div className="flex items-center space-x-4 sm:space-x-8">
             <Link
               href="/auth/signin"
-              className="text-white/90 hover:text-white transition-colors font-medium"
+              className="text-sm sm:text-base text-white/90 hover:text-white transition-colors font-medium"
             >
               Sign In
             </Link>
             <button
               onClick={handleGetStarted}
-              className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium shadow-lg shadow-blue-500/30"
+              className="px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm sm:text-base font-medium shadow-lg shadow-blue-500/30"
             >
               Get Started
             </button>
@@ -70,7 +70,7 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-32">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-20 pb-16 sm:pb-32">
         {/* Subtle mountain/background illustration */}
         <div className="absolute bottom-0 left-0 right-0 h-64 opacity-20">
           <svg className="w-full h-full" viewBox="0 0 1200 200" preserveAspectRatio="none">
@@ -94,32 +94,32 @@ export default function Home() {
           transition={{ duration: 0.6 }}
           className="text-center relative z-10"
         >
-          <h1 className="text-6xl md:text-7xl lg:text-8xl font-serif text-white mb-6 leading-tight">
-            <span className="text-5xl md:text-6xl lg:text-7xl">#1</span>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-serif text-white mb-4 sm:mb-6 leading-tight px-2">
+            <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl">#1</span>
             <br />
             AI assistant for
             <br />
             <span className="font-bold">reimbursements</span>
           </h1>
-          <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-2xl mx-auto font-light">
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/90 mb-6 sm:mb-10 max-w-2xl mx-auto font-light px-4">
             Automatically processes claims, enforces policies, and pays employees instantly. 
             Makes you the most efficient finance team.
           </p>
-          <div className="flex items-center justify-center">
-            <button
-              onClick={handleGetStarted}
-              className="inline-flex items-center px-8 py-4 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all text-lg font-medium shadow-xl shadow-blue-500/40 hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
-            >
-              <Sparkles className="mr-2 h-5 w-5" />
-              Get Started
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </button>
-          </div>
+                      <div className="flex items-center justify-center px-4">
+                        <button
+                          onClick={handleGetStarted}
+                          className="inline-flex items-center px-6 sm:px-8 py-3 sm:py-4 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all text-base sm:text-lg font-medium shadow-xl shadow-blue-500/40 hover:shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
+                        >
+                          <Sparkles className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                          Get Started
+                          <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+                        </button>
+                      </div>
         </motion.div>
       </div>
 
-      {/* Embedded UI Mockup Frame */}
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+                  {/* Embedded UI Mockup Frame */}
+                  <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 sm:pb-20">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ 
