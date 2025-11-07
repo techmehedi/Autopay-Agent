@@ -4,14 +4,17 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, Menu, X } from 'lucide-react';
 import Logo from '@/components/ui/logo';
 import Link from 'next/link';
+import { useSmoothNavigation } from '@/lib/navigation';
 
 export default function Home() {
   const router = useRouter();
   const supabase = createClientComponentClient();
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { navigate } = useSmoothNavigation();
 
   useEffect(() => {
     const checkUser = async () => {
@@ -48,17 +51,21 @@ export default function Home() {
       {/* Navigation */}
       <nav className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+          >
             <Logo size="md" />
             <span className="text-xl sm:text-2xl font-bold text-white">Reimburse.me</span>
-          </Link>
-          <div className="flex items-center space-x-4 sm:space-x-8">
-            <Link
-              href="/auth/signin"
+          </button>
+          {/* Desktop Navigation */}
+          <div className="hidden sm:flex items-center space-x-4 sm:space-x-8">
+            <button
+              onClick={() => navigate('/auth/signin')}
               className="text-sm sm:text-base text-white/90 hover:text-white transition-colors font-medium"
             >
               Sign In
-            </Link>
+            </button>
             <button
               onClick={handleGetStarted}
               className="px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm sm:text-base font-medium shadow-lg shadow-blue-500/30"
@@ -66,7 +73,73 @@ export default function Home() {
               Get Started
             </button>
           </div>
+          {/* Mobile Hamburger Menu */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="sm:hidden p-2 rounded-lg hover:bg-white/10 transition-colors text-white"
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
         </div>
+
+        {/* Mobile Menu Overlay */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-black/50 z-40 sm:hidden"
+                onClick={() => setMobileMenuOpen(false)}
+              />
+              <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="fixed top-0 right-0 h-screen w-64 bg-white/5 backdrop-blur-lg border-l border-white/10 z-50 flex flex-col sm:hidden"
+              >
+                <div className="flex items-center justify-between h-16 px-4 border-b border-white/10">
+                  <div className="flex items-center space-x-2">
+                    <Logo size="sm" />
+                    <span className="text-lg font-bold text-white">Menu</span>
+                  </div>
+                  <button
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-2 rounded-lg hover:bg-white/10 transition-colors text-white"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <nav className="flex-1 px-4 py-6 space-y-2">
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate('/auth/signin');
+                    }}
+                    className="w-full flex items-center justify-center px-4 py-3 rounded-lg text-base font-medium text-white/90 hover:text-white hover:bg-white/10 transition-all"
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate('/auth/signin');
+                    }}
+                    className="w-full flex items-center justify-center px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-base font-medium shadow-lg shadow-blue-500/30"
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Get Started
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </button>
+                </nav>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* Hero Section */}
@@ -137,42 +210,43 @@ export default function Home() {
           }}
           className="relative group"
           whileHover={{ scale: 1.02 }}
+          style={{ touchAction: 'manipulation' }}
         >
           {/* Outer glow frame */}
-          <div className="rounded-3xl p-1 bg-gradient-to-r from-orange-400/30 via-yellow-400/30 to-pink-500/30 shadow-2xl group-hover:from-orange-400/50 group-hover:via-yellow-400/50 group-hover:to-pink-500/50 group-hover:shadow-[0_0_60px_rgba(255,165,0,0.3)] transition-all duration-500">
+          <div className="rounded-2xl sm:rounded-3xl p-0.5 sm:p-1 bg-gradient-to-r from-orange-400/30 via-yellow-400/30 to-pink-500/30 shadow-2xl group-hover:from-orange-400/50 group-hover:via-yellow-400/50 group-hover:to-pink-500/50 group-hover:shadow-[0_0_60px_rgba(255,165,0,0.3)] transition-all duration-500">
             {/* Inner frame */}
-            <div className="rounded-[22px] bg-gradient-to-r from-orange-500/20 via-yellow-400/20 to-pink-500/20 p-2 group-hover:from-orange-500/30 group-hover:via-yellow-400/30 group-hover:to-pink-500/30 transition-all duration-500">
+            <div className="rounded-[18px] sm:rounded-[22px] bg-gradient-to-r from-orange-500/20 via-yellow-400/20 to-pink-500/20 p-1.5 sm:p-2 group-hover:from-orange-500/30 group-hover:via-yellow-400/30 group-hover:to-pink-500/30 transition-all duration-500">
               {/* Dashboard UI Mockup */}
-              <div className="rounded-2xl bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6 overflow-hidden group-hover:shadow-2xl transition-all duration-300">
+              <div className="rounded-xl sm:rounded-2xl bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-3 sm:p-4 md:p-6 overflow-hidden group-hover:shadow-2xl transition-all duration-300">
                 {/* Mock window controls */}
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-3 h-3 rounded-full bg-red-500/50 hover:bg-red-500 transition-colors cursor-pointer"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/50 hover:bg-yellow-500 transition-colors cursor-pointer"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500/50 hover:bg-green-500 transition-colors cursor-pointer"></div>
+                <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-4">
+                  <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-500/50 hover:bg-red-500 transition-colors cursor-pointer"></div>
+                  <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-yellow-500/50 hover:bg-yellow-500 transition-colors cursor-pointer"></div>
+                  <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-500/50 hover:bg-green-500 transition-colors cursor-pointer"></div>
                 </div>
 
                 {/* Mock dashboard content */}
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Header */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-purple-500/30 flex items-center justify-center">
-                        <span className="text-purple-300 text-xs font-bold">$</span>
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-purple-500/30 flex items-center justify-center">
+                        <span className="text-purple-300 text-[10px] sm:text-xs font-bold">$</span>
                       </div>
-                      <div className="text-white text-sm font-medium">Reimbursements</div>
+                      <div className="text-white text-xs sm:text-sm font-medium">Reimbursements</div>
                     </div>
-                    <div className="text-white/60 text-xs">Today</div>
+                    <div className="text-white/60 text-[10px] sm:text-xs">Today</div>
                   </div>
 
                   {/* Stats cards with real data */}
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
                     <motion.div 
                       whileHover={{ scale: 1.05, y: -4 }}
-                      className="bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 hover:border-purple-400/50 transition-all cursor-pointer group"
+                      className="bg-white/5 rounded-lg p-3 sm:p-4 border border-white/10 hover:bg-white/10 hover:border-purple-400/50 transition-all cursor-pointer group"
                     >
-                      <div className="text-white/60 text-xs mb-2">Total Claims</div>
-                      <div className="text-2xl font-bold text-white mb-1 group-hover:text-purple-300 transition-colors">247</div>
-                      <div className="text-white/40 text-xs mb-2">↑ 12% this month</div>
+                      <div className="text-white/60 text-[10px] sm:text-xs mb-1.5 sm:mb-2">Total Claims</div>
+                      <div className="text-xl sm:text-2xl font-bold text-white mb-1 group-hover:text-purple-300 transition-colors">247</div>
+                      <div className="text-white/40 text-[10px] sm:text-xs mb-1.5 sm:mb-2">↑ 12% this month</div>
                       <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                         <motion.div 
                           initial={{ width: 0 }}
@@ -184,11 +258,11 @@ export default function Home() {
                     </motion.div>
                     <motion.div 
                       whileHover={{ scale: 1.05, y: -4 }}
-                      className="bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 hover:border-green-400/50 transition-all cursor-pointer group"
+                      className="bg-white/5 rounded-lg p-3 sm:p-4 border border-white/10 hover:bg-white/10 hover:border-green-400/50 transition-all cursor-pointer group"
                     >
-                      <div className="text-white/60 text-xs mb-2">Approved</div>
-                      <div className="text-2xl font-bold text-white mb-1 group-hover:text-green-300 transition-colors">$18.5K</div>
-                      <div className="text-white/40 text-xs mb-2">↑ 8% this month</div>
+                      <div className="text-white/60 text-[10px] sm:text-xs mb-1.5 sm:mb-2">Approved</div>
+                      <div className="text-xl sm:text-2xl font-bold text-white mb-1 group-hover:text-green-300 transition-colors">$18.5K</div>
+                      <div className="text-white/40 text-[10px] sm:text-xs mb-1.5 sm:mb-2">↑ 8% this month</div>
                       <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                         <motion.div 
                           initial={{ width: 0 }}
@@ -200,11 +274,11 @@ export default function Home() {
                     </motion.div>
                     <motion.div 
                       whileHover={{ scale: 1.05, y: -4 }}
-                      className="bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 hover:border-yellow-400/50 transition-all cursor-pointer group"
+                      className="bg-white/5 rounded-lg p-3 sm:p-4 border border-white/10 hover:bg-white/10 hover:border-yellow-400/50 transition-all cursor-pointer group"
                     >
-                      <div className="text-white/60 text-xs mb-2">Pending</div>
-                      <div className="text-2xl font-bold text-white mb-1 group-hover:text-yellow-300 transition-colors">12</div>
-                      <div className="text-white/40 text-xs mb-2">↓ 3 this week</div>
+                      <div className="text-white/60 text-[10px] sm:text-xs mb-1.5 sm:mb-2">Pending</div>
+                      <div className="text-xl sm:text-2xl font-bold text-white mb-1 group-hover:text-yellow-300 transition-colors">12</div>
+                      <div className="text-white/40 text-[10px] sm:text-xs mb-1.5 sm:mb-2">↓ 3 this week</div>
                       <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                         <motion.div 
                           initial={{ width: 0 }}
@@ -217,12 +291,12 @@ export default function Home() {
                   </div>
 
                   {/* Table with real data */}
-                  <div className="bg-white/5 rounded-lg p-4 border border-white/10">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="text-white/80 text-sm font-medium">Recent Claims</div>
-                      <div className="text-white/40 text-xs">View All →</div>
+                  <div className="bg-white/5 rounded-lg p-3 sm:p-4 border border-white/10">
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                      <div className="text-white/80 text-xs sm:text-sm font-medium">Recent Claims</div>
+                      <div className="text-white/40 text-[10px] sm:text-xs">View All →</div>
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       {[
                         { name: 'Sarah Chen', amount: '$245.50', purpose: 'Team Lunch', status: 'approved', date: '2h ago' },
                         { name: 'Michael Park', amount: '$89.00', purpose: 'Uber Ride', status: 'pending', date: '5h ago' },
@@ -235,22 +309,22 @@ export default function Home() {
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ duration: 0.3, delay: 1 + i * 0.1 }}
                           whileHover={{ x: 4, backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
-                          className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group"
+                          className="flex items-center gap-2 sm:gap-3 md:gap-4 p-2 sm:p-3 rounded-lg hover:bg-white/10 transition-all cursor-pointer group"
                         >
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-xs font-semibold group-hover:scale-110 transition-transform shadow-lg">
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-[10px] sm:text-xs font-semibold group-hover:scale-110 transition-transform shadow-lg flex-shrink-0">
                             {claim.name.split(' ').map(n => n[0]).join('')}
                           </div>
-                          <div className="flex-1">
-                            <div className="text-white text-sm font-medium group-hover:text-purple-300 transition-colors">{claim.name}</div>
-                            <div className="text-white/50 text-xs flex items-center gap-2">
-                              <span>{claim.purpose}</span>
-                              <span>•</span>
-                              <span className="font-semibold">{claim.amount}</span>
-                              <span>•</span>
-                              <span>{claim.date}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-xs sm:text-sm font-medium group-hover:text-purple-300 transition-colors truncate">{claim.name}</div>
+                            <div className="text-white/50 text-[10px] sm:text-xs flex items-center gap-1 sm:gap-2 flex-wrap">
+                              <span className="truncate">{claim.purpose}</span>
+                              <span className="hidden sm:inline">•</span>
+                              <span className="font-semibold whitespace-nowrap">{claim.amount}</span>
+                              <span className="hidden sm:inline">•</span>
+                              <span className="whitespace-nowrap">{claim.date}</span>
                             </div>
                           </div>
-                          <div className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
+                          <div className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-semibold flex-shrink-0 ${
                             claim.status === 'approved' 
                               ? 'bg-green-400/20 text-green-300 group-hover:bg-green-400/30 shadow-lg shadow-green-500/20' 
                               : 'bg-yellow-400/20 text-yellow-300 group-hover:bg-yellow-400/30 shadow-lg shadow-yellow-500/20'
@@ -266,7 +340,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Floating elements for visual interest */}
+          {/* Floating elements for visual interest - hidden on mobile */}
           <motion.div 
             animate={{ 
               scale: [1, 1.2, 1],
@@ -277,7 +351,7 @@ export default function Home() {
               repeat: Infinity,
               ease: "easeInOut"
             }}
-            className="absolute -top-4 -right-4 w-24 h-24 bg-yellow-400/20 rounded-full blur-2xl group-hover:bg-yellow-400/30"
+            className="hidden sm:block absolute -top-4 -right-4 w-24 h-24 bg-yellow-400/20 rounded-full blur-2xl group-hover:bg-yellow-400/30"
           ></motion.div>
           <motion.div 
             animate={{ 
@@ -290,7 +364,7 @@ export default function Home() {
               ease: "easeInOut",
               delay: 0.5
             }}
-            className="absolute -bottom-4 -left-4 w-32 h-32 bg-pink-500/20 rounded-full blur-3xl group-hover:bg-pink-500/30"
+            className="hidden sm:block absolute -bottom-4 -left-4 w-32 h-32 bg-pink-500/20 rounded-full blur-3xl group-hover:bg-pink-500/30"
           ></motion.div>
         </motion.div>
       </div>
