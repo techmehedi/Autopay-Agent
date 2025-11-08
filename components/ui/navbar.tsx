@@ -146,11 +146,12 @@ export default function Navbar({ onToggle }: NavbarProps) {
                 onClick={() => setMobileMenuOpen(false)}
               />
               <motion.aside
-                initial={{ x: '-100%' }}
+                initial={{ x: '100%' }}
                 animate={{ x: 0 }}
-                exit={{ x: '-100%' }}
+                exit={{ x: '100%' }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="fixed left-0 top-0 h-screen w-64 bg-slate-900/95 backdrop-blur-xl border-r border-white/20 z-50 flex flex-col lg:hidden"
+                className="fixed right-0 top-0 h-full w-[280px] max-w-[85vw] bg-slate-900/95 backdrop-blur-xl border-l border-white/20 z-50 flex flex-col lg:hidden"
+                style={{ height: '100dvh' }}
               >
                 {/* Mobile Menu Content */}
                 <div className="flex items-center justify-between h-16 px-4 border-b border-white/10 mt-16">
